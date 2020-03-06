@@ -132,10 +132,111 @@ exports.addUserDetails = (req, res) => {
   const userDetails = reduceUserDetails(req.body)
   db.doc(`/user/${req.user.handle}`).update(userDetails)
     .then(() => {
-      return res.json({ message: 'Deatils addedd successfully '})
+      return res.json({ message: 'Deatils addedd successfully ' })
     })
     .catch((err) => {
       console.log(err)
       return res.status(500).json({ error: err.code })
     })
 }
+
+exports.getAuthenticatedUser = (req, res) => {
+  const userData = {}
+  db.doc(`/user/${req.user.handle}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        userData.credentials = doc.data()
+        return db
+          .collection('likes')
+          .where('userHandle', '==', req.user.handle)
+          .get()
+      }
+    })
+    .then((data) => {
+      userData.likes = []
+      data.forEach((doc) => {
+        userData.likes.push(doc.data())
+      })
+      // return res.json(userData)
+      return db
+        .collection('notifications')
+        .where('recipient', '==', req.user.handle)
+        .orderBy('createdAt', 'desc')
+        .limit(10)
+        .get()
+    })
+    .then((data) => {
+      userData.notifications = []
+      data.forEach((doc) => {
+        userData.notifications.push({
+          recipient: doc.data().recipient,
+          sender: doc.data().sender,
+          createdAt: doc.data().createdAt,
+          postId: doc.data().postId,
+          type: doc.data().type,
+          read: doc.data().read,
+          notificationId: doc.id
+        })
+      })
+      return res.json(userData)
+    })
+    .catch((err) => {
+      console.error(err)
+      return res.status(500).json({ error: err.code })
+    })
+}
+
+exports.getUserDetails = (req, res) => {
+  const userData = {}
+  db.doc(`/user/${req.params.handle}`)
+    .get()
+    .then((doc) => {
+      if (doc.exists) {
+        userData.user = doc.data()
+        return db
+          .collection('post')
+          .where('userHandle', '==', req.params.handle)
+          .orderBy('createdAt', 'desc')
+          .get()
+      } else {
+        return res.status(404).json({ errror: 'User not found' })
+      }
+    })
+    .then((data) => {
+      userData.post = []
+      data.forEach((doc) => {
+        userData.post.push({
+          body: doc.data().body,
+          createdAt: doc.data().createdAt,
+          userHandle: doc.data().userHandle,
+          userImage: doc.data().userImage,
+          likeCount: doc.data().likeCount,
+          commentCount: doc.data().commentCount,
+          postId: doc.id
+        })
+      })
+      return res.json(userData)
+    })
+    .catch((err) => {
+      console.error(err)
+      return res.status(500).json({ error: err.code })
+    })
+}
+
+exports.markNotificationsRead = (req, res) => {
+  const batch = db.batch()
+  req.body.forEach((notificationId) => {
+    const notification = db.doc(`/notifications/${notificationId}`)
+    batch.update(notification, { read: true })
+  })
+  batch
+    .commit()
+    .then(() => {
+      return res.json({ message: 'Notifications marked read' })
+    })
+    .catch((err) => {
+      console.error(err)
+      return res.status(500).json({ error: err.code })
+    })
+};
