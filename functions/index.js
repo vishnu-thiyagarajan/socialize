@@ -1,6 +1,7 @@
 const functions = require('firebase-functions')
 const app = require('express')()
 const FBAuth = require('./util/fbAuth')
+const cors = require('cors')
 
 const {
   getAllPosts,
@@ -20,6 +21,8 @@ const {
   getUserDetails,
   markNotificationsRead
 } = require('./handlers/users')
+
+app.use(cors())
 app.get('/posts', FBAuth, getAllPosts)
 app.post('/posts', FBAuth, postOnePost)
 app.get('/posts/:postId', FBAuth, getPost)

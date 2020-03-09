@@ -15,7 +15,10 @@ exports.postOnePost = (request, response) => {
   const newPost = {
     body: request.body.body,
     userHandle: request.user.handle,
-    createdAt: new Date().toISOString()
+    userImage: request.user.imageUrl,
+    createdAt: new Date().toISOString(),
+    likeCount: 0,
+    commentCount: 0
   }
 
   db.collection('post').add(newPost).then((doc) => {

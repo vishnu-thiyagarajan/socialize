@@ -89,9 +89,7 @@ exports.uploadImage = (req, res) => {
     if (mimetype !== 'image/jpeg' && mimetype !== 'image/png') {
       return res.status(400).json({ error: 'Wrong file type submitted' })
     }
-    // my.image.png => ['my', 'image', 'png']
     const imageExtension = filename.split('.')[filename.split('.').length - 1]
-    // 32756238461724837.png
     imageFileName = `${Math.round(
         Math.random() * 1000000000000
       ).toString()}.${imageExtension}`
@@ -158,7 +156,6 @@ exports.getAuthenticatedUser = (req, res) => {
       data.forEach((doc) => {
         userData.likes.push(doc.data())
       })
-      // return res.json(userData)
       return db
         .collection('notifications')
         .where('recipient', '==', req.user.handle)
