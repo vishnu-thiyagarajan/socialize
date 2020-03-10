@@ -23,7 +23,7 @@ const {
 } = require('./handlers/users')
 
 app.use(cors())
-app.get('/posts', FBAuth, getAllPosts)
+app.get('/posts', getAllPosts)
 app.post('/posts', FBAuth, postOnePost)
 app.get('/posts/:postId', FBAuth, getPost)
 app.post('/posts/:postId/comment', FBAuth, commentOnPost)

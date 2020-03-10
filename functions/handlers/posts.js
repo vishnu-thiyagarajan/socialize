@@ -22,7 +22,8 @@ exports.postOnePost = (request, response) => {
   }
 
   db.collection('post').add(newPost).then((doc) => {
-    response.json({ message: `document ${doc.id} created succeddfully` })
+    newPost.postId = doc.id
+    response.json(newPost)
   }).catch((err) => {
     response.status(500).json({ error: 'something went wrong' })
     console.log(err)
