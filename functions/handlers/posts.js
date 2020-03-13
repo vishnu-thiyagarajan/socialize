@@ -11,6 +11,20 @@ exports.getAllPosts = (request, response) => {
     .catch((err) => console.log(err))
 }
 
+exports.getPosts = (request, response) => {
+  var offSet = request.params.offSet
+  var limit = Number(request.params.limit)
+  db.collection('post').orderBy('createdAt', 'desc').startAfter(offSet).limit(limit).get()
+    .then((data) => {
+      const posts = []
+      data.forEach((doc) => {
+        posts.push({ postId: doc.id, ...doc.data() })
+      })
+      return response.status(200).json(posts)
+    })
+    .catch((err) => console.log(err))
+}
+
 exports.postOnePost = (request, response) => {
   const newPost = {
     body: request.body.body,
@@ -65,8 +79,8 @@ exports.commentOnPost = (req, res) => {
     body: req.body.body,
     createdAt: new Date().toISOString(),
     postId: req.params.postId,
-    userHandle: req.user.handle
-    // userImage: req.user.imageUrl
+    userHandle: req.user.handle,
+    userImage: req.user.imageUrl
   }
   db.doc(`/post/${req.params.postId}`)
     .get()
@@ -74,15 +88,18 @@ exports.commentOnPost = (req, res) => {
       if (!doc.exists) {
         return res.status(404).json({ error: 'post not found' })
       }
-      return doc.ref.update({ commentCount: doc.data().commentCount + 1 })
+      const post = doc.data()
+      post.postId = req.params.postId
+      post.commentCount += 1
+      doc.ref.update({ commentCount: doc.data().commentCount + 1 })
+      return post
     })
-    .then(() => {
-      console.log(newComment)
-      return db.collection('comments').add(newComment)
+    .then((post) => {
+      db.collection('comments').add(newComment)
+      return { post: post, comment: newComment }
     })
-    .then(() => {
-      console.log(newComment)
-      res.json(newComment)
+    .then((obj) => {
+      res.json(obj)
     })
     .catch((err) => {
       console.log(err)
